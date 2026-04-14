@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Submissions — {{ assignment.title }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <a href="/teacher" class="btn btn-secondary btn-sm" style="margin-bottom:1rem;display:inline-flex;align-items:center;gap:0.4rem;">
+    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back
+  </a>
+  <h1>{{ assignment.title }}</h1>
+  <p>
+    {{ submissions|length }} submission{{ 's' if submissions|length != 1 }} received
+    {% if assignment.course %}&nbsp;·&nbsp; <span class="badge badge-purple">{{ assignment.course.name }}</span>{% endif %}
+  </p>
+</div>
+
+{% if assignment.description %}
+<div class="card" style="border-color:rgba(56,189,248,0.15);margin-bottom:1.5rem;">
+  <p style="margin:0;color:var(--muted);">{{ assignment.description }}</p>
+  {% if assignment.attachment_filename %}
+    <a href="/download/{{ assignment.attachment_path }}" class="file-link" style="margin-top:0.5rem;display:inline-flex;">
+      <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+      {{ assignment.attachment_filename }}
+    </a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if submissions %}
+  {% for s in submissions %}
+  <div class="card">
+    <div class="card-header" style="margin-bottom:0.75rem;">
+      <div class="sub-file">
+        <strong>{{ s.student.username if s.student else 'Unknown' }}{% if s.student and s.student.name %} — {{ s.student.name }}{% endif %}</strong>
+        <a href="/download/{{ s.file_path }}" class="file-link" style="margin-top:0.2rem;">
+          <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          {{ s.file_name or s.file_path }}
+        </a>
+      </div>
+      {% if s.marks is not none %}
+        <span class="badge badge-green">{{ s.marks }} / 100</span>
+      {% else %}
+        <span class="badge badge-yellow">Ungraded</span>
+      {% endif %}
+    </div>
+
+    {% if s.feedback %}
+      <p style="font-size:0.85rem;color:var(--success);margin-bottom:0.75rem;">Feedback: {{ s.feedback }}</p>
+    {% endif %}
+
+    <form method="POST" action="/grade/{{ s.id }}" class="flex-row" style="align-items:flex-end;flex-wrap:wrap;gap:0.75rem;">
+      <div class="form-group" style="margin-bottom:0;flex:1;min-width:80px;">
+        <label class="form-label">Marks (0–100)</label>
+        <input type="number" name="marks" min="0" max="100"
+               placeholder="{{ s.marks if s.marks is not none else '0–100' }}"
+               value="{{ s.marks if s.marks is not none else '' }}">
+      </div>
+      <div class="form-group" style="margin-bottom:0;flex:3;min-width:180px;">
+        <label class="form-label">Feedback / Comments</label>
+        <input type="text" name="feedback" placeholder="Optional feedback for student" value="{{ s.feedback or '' }}">
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm" style="margin-bottom:0;">Save Grade</button>
+    </form>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+    <p>No submissions yet for this assignment.</p>
+  </div>
+{% endif %}
+
+{% endblock %}

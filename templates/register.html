@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register — SVV Platform</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo"><span class="dot"></span>SVV Platform</div>
+    <p class="auth-subtitle">Create your account</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input name="username" type="text" required autofocus placeholder="Choose a username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input name="password" type="password" required placeholder="Create a password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">I am a…</label>
+        <select name="role">
+          <option value="student">Student</option>
+          <option value="teacher">Teacher / Faculty</option>
+        </select>
+      </div>
+
+      <hr class="divider">
+
+      <div class="form-group">
+        <label class="form-label">Security Question <span style="color:var(--muted);font-weight:400;">(for password reset)</span></label>
+        <select name="security_question" required>
+          <option value="What is your pet's name?">What is your pet's name?</option>
+          <option value="What city were you born in?">What city were you born in?</option>
+          <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+          <option value="What was the name of your first school?">What was the name of your first school?</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Security Answer</label>
+        <input name="security_answer" type="text" required placeholder="Your answer">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full mt-2">Create Account</button>
+    </form>
+
+    <div class="auth-footer">Already have an account? <a href="/login">Sign in</a></div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard — SVV{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Admin Dashboard</h1>
+  <p>Manage KYC verification, course assignments, and platform setup.</p>
+</div>
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">Pending KYC</div>
+    <div class="stat-value {% if pending_kyc %}warning{% else %}success{% endif %}">{{ pending_kyc|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Courses</div>
+    <div class="stat-value accent">{{ courses|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Teachers</div>
+    <div class="stat-value accent2" style="color:var(--accent2);">{{ teachers|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Students</div>
+    <div class="stat-value success">{{ students|length }}</div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- KYC Verification Section -->
+<div class="admin-section-title"><span class="dot-sm"></span> KYC Verification Queue</div>
+
+{% if pending_kyc %}
+  {% for u in pending_kyc %}
+  <div class="kyc-row">
+    <div class="kyc-row-info">
+      <strong>{{ u.username }} {% if u.name %}<span style="color:var(--muted);">— {{ u.name }}</span>{% endif %}</strong>
+      <span>Role: {{ u.role|capitalize }} &nbsp;|&nbsp; Submitted KYC document for review</span>
+      {% if u.id_proof_filename %}
+        <br><a href="/download/{{ u.id_proof_path }}" class="file-link" style="margin-top:0.2rem;">
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+          {{ u.id_proof_filename }}
+        </a>
+        &nbsp;
+        <a href="/admin/kyc_view/{{ u.id }}" class="file-link">View Document</a>
+      {% endif %}
+    </div>
+    <div class="kyc-actions">
+      <form method="POST" action="/approve_kyc/{{ u.id }}" style="display:inline;">
+        <button class="btn btn-primary btn-sm">Verify ✓</button>
+      </form>
+      <form method="POST" action="/reject_kyc/{{ u.id }}" style="display:inline;" onsubmit="return confirm('Reject KYC for {{ u.username }}?')">
+        <button class="btn btn-danger btn-sm">Reject ✗</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-state" style="padding:1.5rem;">
+    <p>No pending KYC submissions. All clear!</p>
+  </div>
+{% endif %}
+
+<hr class="divider">
+
+<!-- Assign Teacher to Course -->
+<div class="admin-grid">
+  <div class="card">
+    <div class="admin-section-title"><span class="dot-sm" style="background:var(--accent2);"></span> Assign Teacher to Course</div>
+    <form method="POST" action="/assign_course">
+      <input type="hidden" name="action_type" value="teacher">
+      <div class="form-group">
+        <label class="form-label">Select Course</label>
+        <select name="course_id" required>
+          <option value="">— choose course —</option>
+          {% for c in courses %}
+            <option value="{{ c.id }}">{{ c.name }} {% if c.teacher %}(current: {{ c.teacher.username }}){% else %}(unassigned){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Select Teacher</label>
+        <select name="user_id" required>
+          <option value="">— choose teacher —</option>
+          {% for t in teachers %}
+            <option value="{{ t.id }}">{{ t.username }}{% if t.name %} — {{ t.name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if not teachers %}
+        <p class="text-muted" style="font-size:0.82rem;">No teachers registered yet.</p>
+      {% endif %}
+      <button type="submit" class="btn btn-primary btn-sm">Assign Teacher</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="admin-section-title"><span class="dot-sm" style="background:var(--success);"></span> Enroll Student in Course</div>
+    <form method="POST" action="/assign_course">
+      <input type="hidden" name="action_type" value="student">
+      <div class="form-group">
+        <label class="form-label">Select Course</label>
+        <select name="course_id" required>
+          <option value="">— choose course —</option>
+          {% for c in courses %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Select Student</label>
+        <select name="user_id" required>
+          <option value="">— choose student —</option>
+          {% for s in students %}
+            <option value="{{ s.id }}">{{ s.username }}{% if s.name %} — {{ s.name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if not students %}
+        <p class="text-muted" style="font-size:0.82rem;">No students registered yet.</p>
+      {% endif %}
+      <button type="submit" class="btn btn-primary btn-sm">Enroll Student</button>
+    </form>
+  </div>
+</div>
+
+<!-- Add New Course -->
+<div class="card" style="border-color:rgba(129,140,248,0.2);">
+  <div class="admin-section-title"><span class="dot-sm" style="background:var(--accent2);"></span> Add New Course</div>
+  <form method="POST" action="/admin/add_course" class="flex-row" style="align-items:flex-end; gap:0.75rem; flex-wrap:wrap;">
+    <div class="form-group" style="flex:2; min-width:180px; margin-bottom:0;">
+      <label class="form-label">Course Name</label>
+      <input type="text" name="course_name" placeholder="e.g. Chemistry 201" required>
+    </div>
+    <div class="form-group" style="flex:1; min-width:100px; margin-bottom:0;">
+      <label class="form-label">Periods / Week</label>
+      <input type="number" name="periods_per_week" value="3" min="1" max="10">
+    </div>
+    <button type="submit" class="btn btn-secondary btn-sm" style="margin-bottom:0;">Add Course</button>
+  </form>
+</div>
+
+<hr class="divider">
+
+<!-- All Courses Overview -->
+<div class="admin-section-title"><span class="dot-sm"></span> Course Overview</div>
+
+{% for course in courses %}
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h3>{{ course.name }}</h3>
+      <p style="margin:0;">
+        <strong>Teacher:</strong>
+        {% if course.teacher %}
+          <span style="color:var(--accent2);">{{ course.teacher.username }}{% if course.teacher.name %} ({{ course.teacher.name }}){% endif %}</span>
+        {% else %}
+          <span style="color:var(--warning);">Unassigned</span>
+        {% endif %}
+        &nbsp;·&nbsp; {{ course.periods_per_week }} periods/week
+      </p>
+    </div>
+    <span class="badge badge-blue">{{ course.course_enrollments|length }} student{{ 's' if course.course_enrollments|length != 1 }}</span>
+  </div>
+
+  {% if course.course_enrollments %}
+  <table class="perf-table" style="margin-top:0.5rem;">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Name</th>
+        <th>KYC</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in course.course_enrollments %}
+      <tr>
+        <td>{{ e.student.username }}</td>
+        <td>{{ e.student.name or '—' }}</td>
+        <td>
+          {% if e.student.kyc_status == 'Verified' %}
+            <span class="badge badge-green">Verified</span>
+          {% elif e.student.kyc_status == 'In Process' %}
+            <span class="badge badge-yellow">In Process</span>
+          {% else %}
+            <span class="badge badge-red">Unverified</span>
+          {% endif %}
+        </td>
+        <td>
+          <form method="POST" action="/remove_enrollment/{{ e.id }}" style="display:inline;" onsubmit="return confirm('Remove this enrollment?')">
+            <button class="btn btn-danger btn-sm" style="padding:0.2rem 0.6rem;font-size:0.75rem;">Remove</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-muted" style="font-size:0.85rem;margin:0;">No students enrolled yet.</p>
+  {% endif %}
+</div>
+{% endfor %}
+
+{% endblock %}

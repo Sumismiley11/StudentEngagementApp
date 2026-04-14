@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Setup Management{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Setup Management</h1>
+  <p>Overview of all active courses, linked teachers, and enrolled students.</p>
+</div>
+
+{% if courses %}
+  {% for course in courses %}
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3>{{ course.name }}</h3>
+        <p style="margin:0.2rem 0 0;">
+          <strong>Teacher:</strong>
+          {% if course.teacher %}
+            <span style="color:var(--accent2);">{{ course.teacher.username }}{% if course.teacher.name %} ({{ course.teacher.name }}){% endif %}</span>
+          {% else %}
+            <span style="color:var(--warning);">Unassigned</span>
+          {% endif %}
+        </p>
+      </div>
+      <div style="text-align:right;">
+        <span class="badge badge-purple">{{ course.periods_per_week }} Periods/Week</span><br>
+        <span class="badge badge-blue" style="margin-top:0.3rem;">{{ course.course_enrollments|length }} Student{{ 's' if course.course_enrollments|length != 1 }}</span>
+      </div>
+    </div>
+
+    {% if course.course_enrollments %}
+    <div style="margin-top:0.75rem;">
+      <p class="text-muted" style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">Enrolled Students</p>
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+        {% for enrollment in course.course_enrollments %}
+          <span class="badge badge-blue">{{ enrollment.student.username }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+      <p class="text-muted" style="margin-top:0.5rem;font-size:0.85rem;">No students enrolled yet.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <p>No courses have been configured in the system yet.</p>
+  </div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Profile Management{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Profile Management</h1>
+  <p>Manage your personal information and preferences.</p>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">Wallet Balance</div>
+    <div class="stat-value success">₹{{ "%.2f"|format(user.wallet_balance) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">KYC Status</div>
+    {% if user.kyc_status == 'Verified' %}
+      <div class="stat-value success" style="font-size:1.2rem;">✓ Verified</div>
+    {% elif user.kyc_status == 'In Process' %}
+      <div class="stat-value warning" style="font-size:1.2rem;">⏳ In Process</div>
+    {% else %}
+      <div class="stat-value accent" style="font-size:1.2rem;">✗ Unverified</div>
+    {% endif %}
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Role</div>
+    <div class="stat-value accent" style="font-size:1.2rem;">{{ user.role|capitalize }}</div>
+  </div>
+</div>
+
+{% if user.kyc_status == 'In Process' %}
+<div class="alert alert-warning">
+  Your KYC document is pending admin review. Fields updated will show once verified.
+</div>
+{% endif %}
+
+<div class="card">
+  <form method="POST" enctype="multipart/form-data">
+    <div class="admin-grid">
+      <div>
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" name="name" value="{{ user.name or '' }}" placeholder="Your full name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date of Birth</label>
+          <input type="date" name="dob" value="{{ user.dob or '' }}">
+        </div>
+      </div>
+      <div>
+        <div class="form-group">
+          <label class="form-label">Address</label>
+          <input type="text" name="address" value="{{ user.address or '' }}" placeholder="Your address">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Preferences</label>
+          <textarea name="preferences" rows="2" placeholder="e.g. Email notifications, Dark mode">{{ user.preferences or '' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group" style="background: var(--surface2); padding: 1rem; border-radius: var(--radius-sm); border:1px solid rgba(251,191,36,0.2);">
+      <label class="form-label" style="color: var(--warning);">
+        ID / Address Proof
+        <span style="font-weight:400; text-transform:none; letter-spacing:0;">(Required when changing Name, Address, or DoB)</span>
+      </label>
+      <input type="file" name="id_proof" accept=".pdf,.png,.jpg,.jpeg,.docx">
+      {% if user.id_proof_filename %}
+        <p class="text-muted" style="margin-top:0.4rem;">Last uploaded: <a href="/download/{{ user.id_proof_path }}" class="file-link">{{ user.id_proof_filename }}</a></p>
+      {% endif %}
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label class="form-label">Current Password <span style="font-weight:400;text-transform:none;letter-spacing:0;">(required to save changes)</span></label>
+      <input type="password" name="current_password" required placeholder="••••••••">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+  </form>
+</div>
+
+{% endblock %}

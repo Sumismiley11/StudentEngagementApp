@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Student Performance — {{ student_user.username }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <a href="/teacher" class="btn btn-secondary btn-sm" style="margin-bottom:1rem;display:inline-flex;align-items:center;gap:0.4rem;">
+    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back to Dashboard
+  </a>
+  <h1>{{ student_user.name or student_user.username }}</h1>
+  <p>Performance overview for <strong style="color:var(--accent);">{{ student_user.username }}</strong></p>
+</div>
+
+<!-- Student Info -->
+<div class="admin-grid">
+  <div class="card">
+    <div class="admin-section-title"><span class="dot-sm"></span> Student Details</div>
+    <table class="perf-table">
+      <tr><td><strong>Username</strong></td><td>{{ student_user.username }}</td></tr>
+      <tr><td><strong>Full Name</strong></td><td>{{ student_user.name or '—' }}</td></tr>
+      <tr><td><strong>Email / Contact</strong></td><td>{{ student_user.preferences or '—' }}</td></tr>
+      <tr><td><strong>DoB</strong></td><td>{{ student_user.dob or '—' }}</td></tr>
+      <tr>
+        <td><strong>KYC Status</strong></td>
+        <td>{% if student_user.kyc_status == 'Verified' %}<span class="badge badge-green">Verified</span>
+            {% elif student_user.kyc_status == 'In Process' %}<span class="badge badge-yellow">In Process</span>
+            {% else %}<span class="badge badge-red">Unverified</span>{% endif %}</td>
+      </tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="admin-section-title"><span class="dot-sm" style="background:var(--success);"></span> Performance Summary</div>
+    <div class="stats-row" style="grid-template-columns:1fr 1fr;margin-bottom:0;">
+      <div class="stat-card">
+        <div class="stat-label">Assignments</div>
+        <div class="stat-value accent">{{ assignments|length }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Submitted</div>
+        <div class="stat-value success">{{ submission_map|length }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Graded</div>
+        <div class="stat-value warning">{{ submission_map.values()|selectattr('marks', 'ne', none)|list|length }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Marks</div>
+        {% set graded = submission_map.values()|selectattr('marks', 'ne', none)|list %}
+        <div class="stat-value success">
+          {% if graded %}
+            {{ (graded|map(attribute='marks')|sum / graded|length)|round(1) }}
+          {% else %}—{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Assignment Performance Table -->
+<div class="card">
+  <div class="admin-section-title"><span class="dot-sm"></span> Assignment Details</div>
+  {% if assignments %}
+  <table class="perf-table">
+    <thead>
+      <tr>
+        <th>Assignment</th>
+        <th>Course</th>
+        <th>Status</th>
+        <th>File</th>
+        <th>Marks</th>
+        <th>Feedback</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in assignments %}
+      {% set sub = submission_map.get(a.id) %}
+      <tr>
+        <td><strong>{{ a.title }}</strong></td>
+        <td>{{ a.course.name if a.course else '—' }}</td>
+        <td>
+          {% if sub %}
+            {% if sub.marks is not none %}
+              <span class="badge badge-green">Graded</span>
+            {% else %}
+              <span class="badge badge-yellow">Submitted</span>
+            {% endif %}
+          {% else %}
+            <span class="badge badge-red">Not Submitted</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if sub %}
+            <a href="/download/{{ sub.file_path }}" class="file-link">{{ sub.file_name or 'file' }}</a>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% if sub and sub.marks is not none %}
+            <span class="badge badge-green">{{ sub.marks }} / 100</span>
+          {% elif sub %}
+            <!-- Quick grade form -->
+            <form method="POST" action="/grade/{{ sub.id }}" class="grade-form">
+              <input type="number" name="marks" min="0" max="100" placeholder="0–100" style="width:65px;">
+              <input type="hidden" name="feedback" value="">
+              <button type="submit" class="btn btn-primary btn-sm">Save</button>
+            </form>
+          {% else %}—{% endif %}
+        </td>
+        <td style="color:var(--muted);font-size:0.82rem;">
+          {% if sub %}{{ sub.feedback or '—' }}{% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-muted">No assignments for this student's enrolled courses.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

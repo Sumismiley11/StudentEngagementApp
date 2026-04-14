@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% block title %}Teacher Dashboard — SVV{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Teacher Dashboard</h1>
+  <p>Welcome, <strong style="color:var(--accent2);">{{ session.username }}</strong>. Manage your courses, assignments, and students.</p>
+</div>
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">My Courses</div>
+    <div class="stat-value accent">{{ my_courses|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Assignments</div>
+    <div class="stat-value accent">{{ assignments|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Submissions</div>
+    <div class="stat-value success">{{ total_subs }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Students</div>
+    <div class="stat-value warning">{{ enrolled_students|length }}</div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- My Courses -->
+<h2 style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text);">My Assigned Courses</h2>
+
+{% if my_courses %}
+  <div class="stats-row" style="margin-bottom:2rem;">
+    {% for c in my_courses %}
+    <div class="card" style="margin-bottom:0;">
+      <h3>{{ c.name }}</h3>
+      <p style="margin:0.3rem 0 0; font-size:0.85rem;" class="text-muted">
+        {{ c.course_enrollments|length }} Students Enrolled &nbsp;·&nbsp; {{ c.periods_per_week }} Periods/Week
+      </p>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state" style="padding:1.5rem;">
+    <p>You have not been assigned to any courses yet. Please contact the admin.</p>
+  </div>
+{% endif %}
+
+<hr class="divider">
+
+<!-- Create Assignment -->
+<div class="card" style="border-color:rgba(56,189,248,0.25);">
+  <h3 style="margin-bottom:1rem;">Create New Assignment</h3>
+  {% if my_courses %}
+  <form method="POST" action="/create_assignment" enctype="multipart/form-data">
+    <div class="admin-grid">
+      <div>
+        <div class="form-group">
+          <label class="form-label">Assignment Title</label>
+          <input name="title" type="text" placeholder="e.g. Lab Report 1" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assign to Course</label>
+          <select name="course_id" required>
+            <option value="">— select course —</option>
+            {% for c in my_courses %}
+              <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" rows="3" placeholder="Describe the assignment requirements…"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Attachment <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <input type="file" name="attachment">
+        </div>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Create Assignment</button>
+  </form>
+  {% else %}
+    <p class="text-muted">You must be assigned to a course before creating assignments.</p>
+  {% endif %}
+</div>
+
+<hr class="divider">
+
+<!-- All Assignments -->
+<h2 style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text);">My Assignments</h2>
+
+{% if assignments %}
+  {% for a in assignments %}
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3>{{ a.title }}</h3>
+        <p style="margin-bottom:0.3rem;">{{ a.description or 'No description.' }}</p>
+        <span class="badge badge-purple">{{ a.course.name if a.course else 'General' }}</span>
+        {% if a.attachment_filename %}
+          <a href="/download/{{ a.attachment_path }}" class="file-link" style="margin-left:0.5rem;">
+            <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+            {{ a.attachment_filename }}
+          </a>
+        {% endif %}
+      </div>
+      <span class="badge badge-blue">{{ a.submissions|length }} submission{{ 's' if a.submissions|length != 1 }}</span>
+    </div>
+    <div class="flex-row">
+      <a href="/submissions/{{ a.id }}" class="btn btn-secondary btn-sm">View &amp; Grade Submissions</a>
+      <form method="POST" action="/delete_assignment/{{ a.id }}" onsubmit="return confirm('Delete this assignment and all its submissions?')">
+        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    <p>No assignments yet. Create your first one above.</p>
+  </div>
+{% endif %}
+
+<hr class="divider">
+
+<!-- Student List -->
+<h2 style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text);">My Students</h2>
+
+{% if enrolled_students %}
+  <table class="perf-table" style="background:var(--surface);border-radius:var(--radius);overflow:hidden;">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Name</th>
+        <th>KYC</th>
+        <th>Submissions</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in enrolled_students %}
+      <tr>
+        <td><strong>{{ s.username }}</strong></td>
+        <td>{{ s.name or '—' }}</td>
+        <td>
+          {% if s.kyc_status == 'Verified' %}<span class="badge badge-green">Verified</span>
+          {% elif s.kyc_status == 'In Process' %}<span class="badge badge-yellow">In Process</span>
+          {% else %}<span class="badge badge-red">Unverified</span>{% endif %}
+        </td>
+        <td>{{ s.submissions|length }}</td>
+        <td>
+          <a href="/teacher/student/{{ s.id }}" class="btn btn-secondary btn-sm">View Performance</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="empty-state" style="padding:1.5rem;">
+    <p>No students enrolled in your courses yet.</p>
+  </div>
+{% endif %}
+
+{% endblock %}

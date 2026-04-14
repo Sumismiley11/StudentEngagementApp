@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}KYC Review — {{ user.username }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <a href="/admin" class="btn btn-secondary btn-sm" style="margin-bottom:1rem;display:inline-flex;align-items:center;gap:0.4rem;">
+    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back to Admin
+  </a>
+  <h1>KYC Review: {{ user.username }}</h1>
+  <p>Review the submitted identity document and verify or reject.</p>
+</div>
+
+<div class="admin-grid">
+  <div class="card">
+    <div class="admin-section-title"><span class="dot-sm"></span> User Information</div>
+    <table class="perf-table">
+      <tr><td><strong>Username</strong></td><td>{{ user.username }}</td></tr>
+      <tr><td><strong>Role</strong></td><td>{{ user.role|capitalize }}</td></tr>
+      <tr><td><strong>Full Name</strong></td><td>{{ user.name or '—' }}</td></tr>
+      <tr><td><strong>Date of Birth</strong></td><td>{{ user.dob or '—' }}</td></tr>
+      <tr><td><strong>Address</strong></td><td>{{ user.address or '—' }}</td></tr>
+      <tr>
+        <td><strong>KYC Status</strong></td>
+        <td>
+          {% if user.kyc_status == 'Verified' %}<span class="badge badge-green">Verified</span>
+          {% elif user.kyc_status == 'In Process' %}<span class="badge badge-yellow">In Process</span>
+          {% else %}<span class="badge badge-red">Unverified</span>{% endif %}
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="admin-section-title"><span class="dot-sm" style="background:var(--warning);"></span> Submitted Document</div>
+    {% if user.id_proof_path %}
+      <p class="text-muted" style="margin-bottom:1rem;">Filename: <strong style="color:var(--text);">{{ user.id_proof_filename }}</strong></p>
+
+      {% set ext = user.id_proof_filename.rsplit('.', 1)[1].lower() if user.id_proof_filename and '.' in user.id_proof_filename else '' %}
+      {% if ext in ['png', 'jpg', 'jpeg'] %}
+        <img src="/download/{{ user.id_proof_path }}" alt="ID Proof" style="max-width:100%;border-radius:var(--radius-sm);border:1px solid var(--border);">
+      {% else %}
+        <div class="empty-state" style="padding:2rem;">
+          <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="opacity:0.4;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <p>{{ user.id_proof_filename }}</p>
+        </div>
+      {% endif %}
+
+      <a href="/download/{{ user.id_proof_path }}" class="btn btn-secondary btn-sm" style="margin-top:1rem;display:inline-block;">
+        Download Document
+      </a>
+    {% else %}
+      <div class="empty-state" style="padding:2rem;">
+        <p>No document uploaded yet.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card" style="border-color:rgba(52,211,153,0.2);">
+  <div class="flex-row">
+    <form method="POST" action="/approve_kyc/{{ user.id }}">
+      <button class="btn btn-primary">✓ Approve & Verify KYC</button>
+    </form>
+    <form method="POST" action="/reject_kyc/{{ user.id }}" onsubmit="return confirm('Reject and clear KYC for {{ user.username }}?')">
+      <button class="btn btn-danger">✗ Reject KYC</button>
+    </form>
+    <a href="/admin" class="btn btn-secondary">Cancel</a>
+  </div>
+</div>
+
+{% endblock %}

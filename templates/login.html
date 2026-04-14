@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login — SVV Platform</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo"><span class="dot"></span>SVV Platform</div>
+    <p class="auth-subtitle">Student &amp; Teacher Engagement System</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <!-- Role Selector -->
+    <div class="role-selector">
+      <a href="/login?role=student" class="role-btn {% if role_hint == 'student' %}active{% endif %}">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14c3.314 0 6 1.343 6 3v1H6v-1c0-1.657 2.686-3 6-3zm0-2a4 4 0 100-8 4 4 0 000 8z"/></svg>
+        Student
+      </a>
+      <a href="/login?role=teacher" class="role-btn {% if role_hint == 'teacher' %}active{% endif %}">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 7l9-4 9 4v2H3V7zm0 4h18M5 11v7m14-7v7M3 18h18"/></svg>
+        Teacher
+      </a>
+      <a href="/login?role=admin" class="role-btn {% if role_hint == 'admin' %}active{% endif %}">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        Admin
+      </a>
+    </div>
+
+    {% if locked %}
+      <div class="lockout-bar">Session locked. Please wait before trying again.</div>
+    {% else %}
+      <form method="POST" autocomplete="off">
+        <input type="hidden" name="role_hint" value="{{ role_hint }}">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input name="username" type="text" required autofocus
+                 placeholder="{% if role_hint %}Enter {{ role_hint }} username{% else %}Enter your username{% endif %}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input name="password" type="password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">
+          Sign In{% if role_hint %} as {{ role_hint|capitalize }}{% endif %}
+        </button>
+      </form>
+      <div style="text-align: center; margin-top: 1rem;">
+        <a href="/forgot_password" style="font-size: 0.85rem; color: var(--accent); text-decoration: none;">Forgot Password?</a>
+      </div>
+    {% endif %}
+
+    <div class="role-divider">or</div>
+    <a href="/register" class="btn btn-secondary btn-full" style="text-align:center; display:block;">
+      Register New User
+    </a>
+  </div>
+</div>
+</body>
+</html>

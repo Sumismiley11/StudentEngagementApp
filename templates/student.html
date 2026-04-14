@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Student Dashboard — SVV{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Student Dashboard</h1>
+  <p>Welcome back, <strong style="color:var(--accent);">{{ session.username }}</strong>. Here are your courses and assignments.</p>
+</div>
+
+<!-- KYC Warning -->
+{% if user.kyc_status != 'Verified' %}
+<div class="alert alert-warning">
+  ⚠ Your KYC is <strong>{{ user.kyc_status }}</strong>.
+  {% if user.kyc_status == 'Unverified' %}
+    Please update your <a href="/profile" style="color:var(--warning);text-decoration:underline;">profile</a> and upload ID proof.
+  {% else %}
+    Pending admin verification.
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">My Courses</div>
+    <div class="stat-value accent">{{ my_courses|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Assignments</div>
+    <div class="stat-value accent">{{ assignments|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Submitted</div>
+    <div class="stat-value success">{{ submissions|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Graded</div>
+    <div class="stat-value warning">{{ submissions|selectattr('marks', 'ne', none)|list|length }}</div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- Enrolled Courses -->
+<h2 style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text);">
+  My Enrolled Courses
+</h2>
+
+{% if my_courses %}
+  <div class="stats-row" style="margin-bottom:2rem;">
+    {% for c in my_courses %}
+    <div class="card" style="margin-bottom:0;">
+      <h3>{{ c.name }}</h3>
+      <p style="margin:0.3rem 0 0; font-size:0.85rem;" class="text-muted">
+        <strong>Teacher:</strong> {{ c.teacher.username if c.teacher else 'Unassigned' }}
+        {% if c.teacher and c.teacher.name %} ({{ c.teacher.name }}){% endif %}<br>
+        {{ c.periods_per_week }} Periods/Week
+      </p>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state" style="padding:1.5rem;">
+    <p>You are not enrolled in any courses yet. Please wait for the admin to assign you.</p>
+  </div>
+{% endif %}
+
+<hr class="divider">
+
+<!-- Assignments -->
+<h2 style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text);">
+  Open Assignments
+</h2>
+
+{% if assignments %}
+  {% for a in assignments %}
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3>{{ a.title }}</h3>
+        <p style="margin-bottom:0.3rem;">{{ a.description or 'No description provided.' }}</p>
+        <span class="badge badge-purple" style="margin-right:0.3rem;">{{ a.course.name if a.course else 'General' }}</span>
+        {% if a.attachment_filename %}
+          <a href="/download/{{ a.attachment_path }}" class="file-link">
+            <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+            {{ a.attachment_filename }}
+          </a>
+        {% endif %}
+      </div>
+      {% if a.id in submitted_ids %}
+        {% set sub = submission_map[a.id] %}
+        {% if sub.marks is not none %}
+          <span class="badge badge-green">{{ sub.marks }} / 100</span>
+        {% else %}
+          <span class="badge badge-yellow">Submitted — Awaiting Grade</span>
+        {% endif %}
+      {% else %}
+        <span class="badge badge-red">Pending</span>
+      {% endif %}
+    </div>
+
+    {% if a.id not in submitted_ids %}
+    <form method="POST" action="/submit/{{ a.id }}" enctype="multipart/form-data">
+      <div class="flex-row">
+        <input type="file" name="file" style="flex:1;padding:0.45rem 0.7rem;font-size:0.85rem;" required>
+        <button type="submit" class="btn btn-primary btn-sm">Upload Submission</button>
+      </div>
+    </form>
+    {% else %}
+      {% set sub = submission_map[a.id] %}
+      <p class="text-muted" style="margin:0.5rem 0 0;">
+        Submitted: <strong style="color:var(--text);">{{ sub.file_name or sub.file_path }}</strong>
+        {% if sub.feedback %}
+          <br><span style="color:var(--success);">Feedback: {{ sub.feedback }}</span>
+        {% endif %}
+      </p>
+    {% endif %}
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    <p>No assignments posted yet for your courses.</p>
+  </div>
+{% endif %}
+
+<hr class="divider">
+
+<!-- Submission History -->
+<h2 style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text);">
+  My Submission History
+</h2>
+
+{% if submissions %}
+  <table class="perf-table" style="background:var(--surface);border-radius:var(--radius);overflow:hidden;">
+    <thead>
+      <tr>
+        <th>Assignment</th>
+        <th>Course</th>
+        <th>File</th>
+        <th>Marks</th>
+        <th>Feedback</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in submissions %}
+      <tr>
+        <td><strong>{{ s.assignment.title }}</strong></td>
+        <td>{{ s.assignment.course.name if s.assignment.course else '—' }}</td>
+        <td>
+          <a href="/download/{{ s.file_path }}" class="file-link">{{ s.file_name or 'file' }}</a>
+        </td>
+        <td>
+          {% if s.marks is not none %}
+            <span class="badge badge-green">{{ s.marks }} / 100</span>
+          {% else %}
+            <span class="badge badge-yellow">Pending</span>
+          {% endif %}
+        </td>
+        <td style="color:var(--muted);font-size:0.82rem;">{{ s.feedback or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="text-muted">No submissions yet.</p>
+{% endif %}
+
+{% endblock %}

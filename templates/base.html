@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SVV — Student Engagement{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-brand" href="/">
+    <span class="dot"></span>SVV Platform
+  </a>
+  <div class="nav-right">
+    {% if session.username %}
+      <a class="logout-link" href="/profile" style="border:none;">Profile</a>
+      {% if session.role == 'student' or session.role == 'teacher' %}
+        <a class="logout-link" href="/setup" style="border:none;">Courses</a>
+      {% endif %}
+      {% if session.role == 'admin' %}
+        <a class="logout-link" href="/admin" style="border:none;">Admin Panel</a>
+      {% endif %}
+      <span class="nav-user">Signed in as <span>{{ session.username }}</span>
+        <span class="badge badge-{% if session.role == 'admin' %}red{% elif session.role == 'teacher' %}purple{% else %}blue{% endif %}" style="margin-left:0.3rem;font-size:0.65rem;">{{ session.role }}</span>
+      </span>
+      <a class="logout-link" href="/logout">Logout</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>
