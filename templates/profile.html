@@ -44,7 +44,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Date of Birth</label>
-          <input type="date" name="dob" value="{{ user.dob or '' }}">
+         <input type="date" name="dob" value="{{ user.dob or '' }}" min="1950-01-01" max="2015-12-31">
         </div>
       </div>
       <div>
